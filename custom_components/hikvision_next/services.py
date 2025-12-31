@@ -168,6 +168,61 @@ def setup_services(hass: HomeAssistant) -> None:
             except (HTTPStatusError, ISAPIForbiddenError, ISAPIUnauthorizedError) as ex:
                 raise HomeAssistantError(f"PTZ stop failed for {entity_id}: {ex}") from ex
 
+    async def handle_ptz(call: ServiceCall):
+        """Handle the PTZ action call (ONVIF-compatible interface)."""
+        entity_ids = call.data.get("entity_id")
+        if not entity_ids:
+            raise HomeAssistantError("No entity_id provided")
+
+        # Ensure entity_ids is a list
+        if isinstance(entity_ids, str):
+            entity_ids = [entity_ids]
+
+        # Get PTZ parameters
+        pan = call.data.get("pan")
+        tilt = call.data.get("tilt")
+        zoom = call.data.get("zoom")
+        move_mode = call.data.get("move_mode", "ContinuousMove")
+        continuous_duration = call.data.get("continuous_duration", 2.0)
+
+        # Convert ONVIF-style parameters to Hikvision values
+        pan_value = 0
+        tilt_value = 0
+        zoom_value = 0
+
+        # If Stop mode, send stop command (all zeros)
+        if move_mode == "Stop":
+            # Stop command: all values zero, no duration
+            duration_ms = 0
+        else:
+            # ContinuousMove mode: convert direction parameters
+            if pan == "LEFT":
+                pan_value = -70
+            elif pan == "RIGHT":
+                pan_value = 70
+
+            if tilt == "UP":
+                tilt_value = 70
+            elif tilt == "DOWN":
+                tilt_value = -70
+
+            if zoom == "ZOOM_IN":
+                zoom_value = -70
+            elif zoom == "ZOOM_OUT":
+                zoom_value = 70
+
+            # For hold-to-move: duration=0 means no auto-stop (continuous until Stop command)
+            # For timed mode: duration>0 triggers auto-stop after delay
+            duration_ms = int(continuous_duration * 1000) if continuous_duration > 0 else 0
+
+        # Execute PTZ command for each entity
+        for entity_id in entity_ids:
+            try:
+                device, channel_id = _get_camera_channel_id(hass, entity_id)
+                await device.ptz_control(channel_id, pan_value, tilt_value, zoom_value, duration_ms, continuous=True)
+            except (HTTPStatusError, ISAPIForbiddenError, ISAPIUnauthorizedError) as ex:
+                raise HomeAssistantError(f"PTZ control failed for {entity_id}: {ex}") from ex
+
     hass.services.async_register(
         DOMAIN,
         ACTION_REBOOT,
@@ -189,4 +244,9 @@ def setup_services(hass: HomeAssistant) -> None:
         DOMAIN,
         ACTION_PTZ_STOP,
         handle_ptz_stop,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        "ptz",
+        handle_ptz,
     )

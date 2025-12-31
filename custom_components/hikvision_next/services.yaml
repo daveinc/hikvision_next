@@ -153,3 +153,57 @@ ptz_stop:
     entity:
       domain: camera
       integration: hikvision_next
+
+ptz:
+  name: PTZ
+  description: "Control PTZ camera movement (ONVIF-compatible interface)."
+  target:
+    entity:
+      domain: camera
+      integration: hikvision_next
+  fields:
+    tilt:
+      selector:
+        select:
+          options:
+            - "DOWN"
+            - "UP"
+    pan:
+      selector:
+        select:
+          options:
+            - "LEFT"
+            - "RIGHT"
+    zoom:
+      selector:
+        select:
+          options:
+            - "ZOOM_IN"
+            - "ZOOM_OUT"
+    distance:
+      default: 0.1
+      selector:
+        number:
+          min: 0
+          max: 1
+          step: 0.01
+    speed:
+      selector:
+        number:
+          min: 0
+          max: 1
+          step: 0.01
+    continuous_duration:
+      default: 2.0
+      selector:
+        number:
+          min: 0
+          max: 10
+          step: 0.1
+    move_mode:
+      default: "ContinuousMove"
+      selector:
+        select:
+          options:
+            - "ContinuousMove"
+            - "Stop"
