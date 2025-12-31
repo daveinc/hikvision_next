@@ -124,5 +124,41 @@
         "name": "{camera} Snapshot"
       }
     }
+  },
+  "services": {
+    "ptz_move": {
+      "name": "PTZ Move",
+      "description": "Control PTZ camera movement (pan, tilt, zoom).",
+      "fields": {
+        "direction": {
+          "name": "Direction",
+          "description": "Predefined movement direction."
+        },
+        "pan": {
+          "name": "Pan speed",
+          "description": "Custom pan speed/direction (-100 to 100). Overrides direction parameter."
+        },
+        "tilt": {
+          "name": "Tilt speed",
+          "description": "Custom tilt speed/direction (-100 to 100). Overrides direction parameter."
+        },
+        "zoom": {
+          "name": "Zoom speed",
+          "description": "Custom zoom speed/direction (-100 to 100). Overrides direction parameter."
+        },
+        "duration": {
+          "name": "Duration (ms)",
+          "description": "Movement duration in milliseconds (for momentary mode)."
+        },
+        "continuous": {
+          "name": "Continuous mode",
+          "description": "If enabled, movement continues until stop command is sent."
+        }
+      }
+    },
+    "ptz_stop": {
+      "name": "PTZ Stop",
+      "description": "Stop all PTZ camera movement."
+    }
   }
 }

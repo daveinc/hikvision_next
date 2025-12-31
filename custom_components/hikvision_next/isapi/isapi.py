@@ -649,6 +649,52 @@ class ISAPIClient:
         """Reboot device."""
         await self.request(PUT, "System/reboot", present="xml")
 
+    async def ptz_control(
+        self,
+        channel_id: int,
+        pan: int = 0,
+        tilt: int = 0,
+        zoom: int = 0,
+        duration: int = 0,
+        continuous: bool = False,
+    ) -> None:
+        """Control PTZ camera movement."""
+        import asyncio
+        from homeassistant.core import HomeAssistant
+
+        # Build XML payload - match IE interface format (simplified)
+        ptz_data = {"PTZData": {}}
+
+        if zoom != 0:
+            # Zoom only
+            ptz_data["PTZData"]["zoom"] = zoom
+        else:
+            # Pan/tilt only
+            ptz_data["PTZData"]["pan"] = pan
+            ptz_data["PTZData"]["tilt"] = tilt
+
+        xml = xmltodict.unparse(ptz_data, full_document=False)
+
+        # Always use continuous mode (matches IE interface behavior)
+        await self.request(PUT, f"PTZCtrl/channels/{channel_id}/continuous", present="xml", data=xml)
+
+        # If duration specified and not a stop command, schedule auto-stop in background
+        if duration > 0 and (pan != 0 or tilt != 0 or zoom != 0):
+            async def auto_stop():
+                """Send stop command after duration (non-blocking)."""
+                await asyncio.sleep(duration / 1000.0)
+                stop_data = {"PTZData": {}}
+                if zoom != 0:
+                    stop_data["PTZData"]["zoom"] = 0
+                else:
+                    stop_data["PTZData"]["pan"] = 0
+                    stop_data["PTZData"]["tilt"] = 0
+                stop_xml = xmltodict.unparse(stop_data, full_document=False)
+                await self.request(PUT, f"PTZCtrl/channels/{channel_id}/continuous", present="xml", data=stop_xml)
+
+            # Schedule stop in background, don't wait for it
+            asyncio.create_task(auto_stop())
+
     @staticmethod
     def parse_event_notification(xml: str) -> AlertInfo:
         """Parse incoming EventNotificationAlert XML message."""
