@@ -62,3 +62,148 @@ isapi_request:
       selector:
         text:
           multiline: true
+
+ptz_move:
+  name: PTZ Move
+  description: "Control PTZ camera movement (pan, tilt, zoom)."
+  target:
+    entity:
+      domain: camera
+      integration: hikvision_next
+  fields:
+    direction:
+      required: false
+      name: "Direction"
+      description: "Predefined movement direction"
+      selector:
+        select:
+          mode: dropdown
+          options:
+            - label: "Up"
+              value: "up"
+            - label: "Down"
+              value: "down"
+            - label: "Left"
+              value: "left"
+            - label: "Right"
+              value: "right"
+            - label: "Up Left"
+              value: "up_left"
+            - label: "Up Right"
+              value: "up_right"
+            - label: "Down Left"
+              value: "down_left"
+            - label: "Down Right"
+              value: "down_right"
+            - label: "Zoom In"
+              value: "zoom_in"
+            - label: "Zoom Out"
+              value: "zoom_out"
+            - label: "Stop"
+              value: "stop"
+    pan:
+      required: false
+      name: "Pan speed"
+      description: "Custom pan speed/direction (-100 to 100). Overrides direction parameter."
+      example: 50
+      selector:
+        number:
+          min: -100
+          max: 100
+    tilt:
+      required: false
+      name: "Tilt speed"
+      description: "Custom tilt speed/direction (-100 to 100). Overrides direction parameter."
+      example: 30
+      selector:
+        number:
+          min: -100
+          max: 100
+    zoom:
+      required: false
+      name: "Zoom speed"
+      description: "Custom zoom speed/direction (-100 to 100). Overrides direction parameter."
+      example: 20
+      selector:
+        number:
+          min: -100
+          max: 100
+    duration:
+      required: false
+      name: "Duration (ms)"
+      description: "Movement duration in milliseconds (for momentary mode)"
+      default: 1000
+      selector:
+        number:
+          min: 100
+          max: 10000
+          unit_of_measurement: "ms"
+    continuous:
+      required: false
+      name: "Continuous mode"
+      description: "If enabled, movement continues until stop command is sent"
+      default: false
+      selector:
+        boolean:
+
+ptz_stop:
+  name: PTZ Stop
+  description: "Stop all PTZ camera movement."
+  target:
+    entity:
+      domain: camera
+      integration: hikvision_next
+
+ptz:
+  name: PTZ
+  description: "Control PTZ camera movement (ONVIF-compatible interface)."
+  target:
+    entity:
+      domain: camera
+      integration: hikvision_next
+  fields:
+    tilt:
+      selector:
+        select:
+          options:
+            - "DOWN"
+            - "UP"
+    pan:
+      selector:
+        select:
+          options:
+            - "LEFT"
+            - "RIGHT"
+    zoom:
+      selector:
+        select:
+          options:
+            - "ZOOM_IN"
+            - "ZOOM_OUT"
+    distance:
+      default: 0.1
+      selector:
+        number:
+          min: 0
+          max: 1
+          step: 0.01
+    speed:
+      selector:
+        number:
+          min: 0
+          max: 1
+          step: 0.01
+    continuous_duration:
+      default: 2.0
+      selector:
+        number:
+          min: 0
+          max: 10
+          step: 0.1
+    move_mode:
+      default: "ContinuousMove"
+      selector:
+        select:
+          options:
+            - "ContinuousMove"
+            - "Stop"
