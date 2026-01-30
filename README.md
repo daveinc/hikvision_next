@@ -1,160 +1,148 @@
-# Hikvision Next
+# Hikvision Next - Enhanced Version
 
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/maciej-or/hikvision_next?style=flat-square) [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/hacs/integration)
+> **Note**: This is a fork of [maciej-or/hikvision_next](https://github.com/maciej-or/hikvision_next) with critical bug fixes and improvements.
 
-The Home Assistant integration for Hikvision NVRs and IP cameras. Receives and switches detection of alarm events. Provides video streams.
+## 🚀 What's Fixed in This Fork
 
-## Features
+### ⚡ Instant Binary Sensor Updates
+**Problem**: Motion detection and other binary sensors were delayed by up to 2 minutes due to polling every 120 seconds.
 
-- Camera entities for main and sub streams
-- Real-time Acusense events notifications through binary sensors and HA events (hikvision_next_event)
-- Switches for Acusense events detection
-- Switches for NVR Outputs and PIR sensor
-- Holiday mode switch (allows to switch continuous recording with appropriate NVR setup)
-- Image entities for the latest snapshots
-- Tracking HDD and NAS status
-- Tracking Notifications Host settings for diagnostic purposes
-- Remote reboot device
-- Basic and digest authentication support
+**Solution**: Binary sensors now respond **instantly** by properly utilizing Hikvision's real-time event stream with `eventState` (active/inactive) parsing.
 
-### Supported events
+**Before**: 
+- Motion detected → wait up to 2 minutes for sensor to update
+- Sensor stuck ON (never turned OFF automatically)
 
-- Motion
-- Video Tampering
-- Video Loss
-- Scene Change
-- Intrusion (Field Detection)
-- Line Crossing
-- Region Entrance
-- Region Exiting
-- NVR Input Triggers
-- PIR
+**After**:
+- Motion detected → sensor turns ON **instantly** (<1 second)
+- Motion ends → sensor turns OFF **instantly**
+- Perfect for automations that need real-time response
 
-**NOTE**
-Events must be set to alert the surveillance center in Linkage Action for Home Assistant to be notified. Otherwise related binary sensors and switches will appear as disabled entities.
+---
 
-### Blueprints
+## 📦 Installation
 
-#### Take Multiple Snapshots On Detection Event
+### Via HACS (Recommended)
 
-Creates automation that allows to take snapshots from selected cameras when an event sensor is triggered.
+1. Open HACS in Home Assistant
+2. Click the **3 dots** (top right) → **Custom repositories**
+3. Add this repository:
+   - **URL**: `https://github.com/YOUR_USERNAME/hikvision_next`
+   - **Category**: `Integration`
+4. Click **"Explore & Download Repositories"**
+5. Search for **"Hikvision Next"**
+6. Download and restart Home Assistant
 
-[<img src="https://my.home-assistant.io/badges/blueprint_import.svg">](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https://github.com/maciej-or/hikvision_next/blob/main/blueprints/take_pictures_on_motion_detection.yaml)
+### Manual Installation
 
-#### Display Sensor State On Hikvision Video
+1. Download this repository
+2. Copy the `custom_components/hikvision_next` folder to your HA `config/custom_components/` directory
+3. Restart Home Assistant
 
-Creates an automation that allows to display text overlay on a selected video stream with the state of a selected sensor. Refreshes every 15 minutes.
+---
 
-[<img src="https://my.home-assistant.io/badges/blueprint_import.svg">](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https://github.com/maciej-or/hikvision_next/blob/main/blueprints/display_sensor_state_on_hikvision_video.yaml)
+## ✅ Tested On
 
-## Preview
+- **NVR Model**: DS-7216HQHI-K1
+- **Firmware**: [Add your firmware version]
+- **Home Assistant**: 2024.1+ (should work on older versions too)
 
-### IP Camera device view
-![IP Camera](/assets/ipcam.jpg "IP Camera device view")
+Please report your working configurations in [Issues](https://github.com/YOUR_USERNAME/hikvision_next/issues) to help others!
 
-### NVR device view
-![NVR](/assets/nvr.jpg "NVR device view")
+---
 
-The scope supported features depends on device model, setup and firmware version.
+## 🔧 Technical Details
 
-## Installation
+### Changes Made
 
-[<img src="https://my.home-assistant.io/badges/hacs_repository.svg">](https://my.home-assistant.io/redirect/hacs_repository/?owner=maciej-or&repository=hikvision_next&category=integration)
+**1. Models (`isapi/models.py`)**
+- Added `event_state: str` field to `AlertInfo` dataclass
+- Stores "active" or "inactive" state from event notifications
 
-### With HACS
+**2. ISAPI Client (`isapi/isapi.py`)**
+- Modified `parse_event_notification()` to extract `<eventState>` from XML
+- Passes event state to `AlertInfo` object
 
-1. This integration you will find in the default HACS store. Search for `Hikvision NVR / IP Camera` on `HACS / Integrations` page and press `Download` button
-2. on `Settings / Devices & Services` page press `+ Add Integration`
-3. Search for `Hikvision NVR / IP Camera` and add your Hikvision device using config dialog, repeat the last 2 steps for more devices
+**3. Notifications Handler (`notifications.py`)**
+- Updated `trigger_sensor()` to use `event_state` for binary sensor state
+- Sets sensor ON when `eventState == "active"`
+- Sets sensor OFF when `eventState == "inactive"`
+- Fires HA events only on motion start (not on motion end)
 
-### Manual
+### Why This Works
 
-1. copy `custom_components/hikvision_next` folder into `conifg/custom_components`
-2. restart Home Assistant
-3. on `Settings / Devices & Services` page press `+ Add Integration`
-4. search for `Hikvision NVR / IP Camera` and add your Hikvision device using config dialog, repeat the last 2 steps for more devices
-
-## Hikvision device setup checklist
-
-- Network settings
-  - enabled ISAPI access
-- User Management - create user with permissions:
-  - Remote: Parameters Settings
-  - Remote: Log Search / Interrogate Working Status
-  - Remote: Live View
-  - Remote: Notify Surveillance Center / Trigger Alarm Output
-- Events
-  - Notify Surveillance Center
-  - Regions if needed
-  - Arming Schedule
-- Storage Schedule Settings - set continuous recording in Holiday mode for desired cameras
-- Notifications Host - IP address of Home Assistant instance for event notifications. Can be set manually or by this integration if checked `Set Notifications Host` checkbox in the configuration dialog. It will be reverted to `http://0.0.0.0:80/` on integration unload.
-
-## Reporting issues
-
-There are a lot of Hikvision devices with different firmwares in the world. In most cases logs are crucial to solve your problem, so please attach them to the report.
-Keep in mind that logs include MAC addresses, serial numbers and local IP addresses of your devices. Consider using [pastebin.com](https://pastebin.com) or similar services for sharing logs.
-
-You can also download a `diagnostic output` to provide essential information about your device. It is available on device info page. This redacts all sensitive data and can be provided in the github issue.
-
-Setup log level to `debug` in configuration.yaml
-
-```yaml
-logger:
-  logs:
-    custom_components.hikvision_next: debug
+Hikvision devices send real-time HTTP POST notifications with XML like:
+```xml
+<EventNotificationAlert>
+  <eventType>VMD</eventType>
+  <eventState>active</eventState>  <!-- Motion started -->
+  ...
+</EventNotificationAlert>
 ```
 
-Restart Home Assistant
+And when motion ends:
+```xml
+<EventNotificationAlert>
+  <eventType>VMD</eventType>
+  <eventState>inactive</eventState>  <!-- Motion ended -->
+  ...
+</EventNotificationAlert>
+```
 
-Download logs from `Settings / System / Logs`
+The original integration was ignoring the `eventState` field and relying on slow polling instead.
 
-## Tested models
+---
 
-### NVR
+## 🐛 Known Issues from Original
 
-- Annke N46PCK
-- DS-7108NI-Q1/8P
-- DS-7608NI-I2
-- DS-7608NI-I2/8P
-- DS-7608NXI-I2/8P/S
-- DS-7608NXI-K1/8P
-- DS-7616NI-E2/16P
-- DS-7616NI-I2/16P
-- DS-7616NI-Q2
-- DS-7616NI-Q2/16P
-- DS-7616NXI-I2/16P/S
-- DS-7716NI-I4/16P
-- DS-7732NI-M4
-- ERI-K104-P4
+These are **still present** (not fixed in this fork yet):
 
-### DVR
+- Camera stream entities may not appear (reported in [home-assistant/core#xxxxx](https://github.com/home-assistant/core/issues))
+- [Add any other known issues you're aware of]
 
-- iDS-7204HUHI-M1/FA/A
-- iDS-7204HUHI-M1/P
-- iDS-7208HQHI-M1(A)/S(C)
+---
 
-### IP Camera
+## 🤝 Contributing
 
-- Annke C800 (I91BM)
-- DS-2CD2047G2-LU/SL
-- DS-2CD2047G2H-LIU
-- DS-2CD2087G2-LU
-- DS-2CD2146G2-ISU
-- DS-2CD2155FWD-I
-- DS-2CD2346G2-IU
-- DS-2CD2386G2-IU
-- DS-2CD2387G2-LU
-- DS-2CD2387G2H-LISU/SL
-- DS-2CD2425FWD-IW
-- DS-2CD2443G0-IW
-- DS-2CD2532F-IWS
-- DS-2CD2546G2-IS
-- DS-2CD2747G2-LZS
-- DS-2CD2785G1-IZS
-- DS-2CD2H46G2-IZS (C)
-- DS-2CD2T46G2-ISU/SL
-- DS-2CD2T87G2-L
-- DS-2CD2T87G2P-LSU/SL
-- DS-2DE4425IW-DE (PTZ)
-- DS-2SE4C425MWG-E/26
+Found a bug? Have an improvement? 
+
+1. Open an [Issue](https://github.com/YOUR_USERNAME/hikvision_next/issues)
+2. Or submit a Pull Request!
+
+Since the original repository appears unmaintained (last update 2+ years ago), I'm maintaining this fork for the community.
+
+---
+
+## 📝 Credits
+
+- **Original Author**: [maciej-or](https://github.com/maciej-or) - Created the excellent foundation
+- **This Fork**: Fixed instant binary sensor updates
+- **Contributors**: [List any contributors who help you]
+
+---
+
+## 📄 License
+
+[Same license as original - usually MIT or Apache 2.0, check the original repo]
+
+---
+
+## 💬 Support
+
+- **Issues**: [GitHub Issues](https://github.com/YOUR_USERNAME/hikvision_next/issues)
+- **Community**: Home Assistant Community Forums
+- **Documentation**: [Original ISAPI Documentation](link if you have it)
+
+---
+
+## 🔮 Roadmap
+
+Potential future improvements (help wanted!):
+
+- [ ] Fix camera stream entity creation
+- [ ] Reduce polling interval for non-critical sensors
+- [ ] Add support for [feature X]
+- [ ] Improve error handling
+- [ ] Add more comprehensive tests
+
+**Want to help?** Pick an item and open an issue to discuss implementation!
