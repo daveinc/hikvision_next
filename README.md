@@ -44,8 +44,50 @@
 ## ✅ Tested On
 
 - **NVR Model**: DS-7216HQHI-K1
-- **Firmware**: [Add your firmware version]
-- **Home Assistant**: 2024.1+ (should work on older versions too)
+- **Firmware**: V4.20.000 build 190724
+- Know to be working with : 
+Annke N46PCK
+DS-7108NI-Q1/8P
+DS-7608NI-I2
+DS-7608NI-I2/8P
+DS-7608NXI-I2/8P/S
+DS-7608NXI-K1/8P
+DS-7616NI-E2/16P
+DS-7616NI-I2/16P
+DS-7616NI-Q2
+DS-7616NI-Q2/16P
+DS-7616NXI-I2/16P/S
+DS-7716NI-I4/16P
+DS-7732NI-M4
+ERI-K104-P4
+DVR
+iDS-7204HUHI-M1/FA/A
+iDS-7204HUHI-M1/P
+iDS-7208HQHI-M1(A)/S(C)
+IP Camera
+Annke C800 (I91BM)
+DS-2CD2047G2-LU/SL
+DS-2CD2047G2H-LIU
+DS-2CD2087G2-LU
+DS-2CD2146G2-ISU
+DS-2CD2155FWD-I
+DS-2CD2346G2-IU
+DS-2CD2386G2-IU
+DS-2CD2387G2-LU
+DS-2CD2387G2H-LISU/SL
+DS-2CD2425FWD-IW
+DS-2CD2443G0-IW
+DS-2CD2532F-IWS
+DS-2CD2546G2-IS
+DS-2CD2747G2-LZS
+DS-2CD2785G1-IZS
+DS-2CD2H46G2-IZS (C)
+DS-2CD2T46G2-ISU/SL
+DS-2CD2T87G2-L
+DS-2CD2T87G2P-LSU/SL
+DS-2DE4425IW-DE (PTZ)
+DS-2SE4C425MWG-E/26
+- **Home Assistant**: 2025.X+ (should work on older versions too)
 
 Please report your working configurations in [Issues](https://github.com/daveinc/hikvision_next/issues) to help others!
 
