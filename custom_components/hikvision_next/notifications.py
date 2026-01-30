@@ -184,8 +184,13 @@ class EventNotificationsView(HomeAssistantView):
         if entity_id:
             entity = self.hass.states.get(entity_id)
             if entity:
-                self.hass.states.async_set(entity_id, STATE_ON, entity.attributes)
-                self.fire_hass_event(alert)
+                # CHANGED: Set state based on eventState from XML
+                new_state = STATE_ON if alert.event_state == "active" else "off"
+                self.hass.states.async_set(entity_id, new_state, entity.attributes)
+            
+                # Only fire event when motion starts (active), not when it ends
+                if alert.event_state == "active":
+                    self.fire_hass_event(alert)
             return
         raise ValueError(f"Entity not found {entity_id}")
 
