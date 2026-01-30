@@ -27,7 +27,7 @@
 1. Open HACS in Home Assistant
 2. Click the **3 dots** (top right) → **Custom repositories**
 3. Add this repository:
-   - **URL**: `https://github.com/YOUR_USERNAME/hikvision_next`
+   - **URL**: `https://github.com/daveinc/hikvision_next`
    - **Category**: `Integration`
 4. Click **"Explore & Download Repositories"**
 5. Search for **"Hikvision Next"**
@@ -47,7 +47,7 @@
 - **Firmware**: [Add your firmware version]
 - **Home Assistant**: 2024.1+ (should work on older versions too)
 
-Please report your working configurations in [Issues](https://github.com/YOUR_USERNAME/hikvision_next/issues) to help others!
+Please report your working configurations in [Issues](https://github.com/daveinc/hikvision_next/issues) to help others!
 
 ---
 
