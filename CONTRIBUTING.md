@@ -8,7 +8,7 @@ This is a community-maintained fork of the original [maciej-or/hikvision_next](h
 
 ## 🐛 Reporting Bugs
 
-1. Check [existing issues](https://github.com/YOUR_USERNAME/hikvision_next/issues) first
+1. Check [existing issues](https://github.com/daveinc/hikvision_next/issues) first
 2. Include:
    - Your Hikvision device model
    - Firmware version
