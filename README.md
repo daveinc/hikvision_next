@@ -106,7 +106,7 @@ These are **still present** (not fixed in this fork yet):
 
 Found a bug? Have an improvement? 
 
-1. Open an [Issue](https://github.com/YOUR_USERNAME/hikvision_next/issues)
+1. Open an [Issue](https://github.com/daveinc/hikvision_next/issues)
 2. Or submit a Pull Request!
 
 Since the original repository appears unmaintained (last update 2+ years ago), I'm maintaining this fork for the community.
@@ -129,7 +129,7 @@ Since the original repository appears unmaintained (last update 2+ years ago), I
 
 ## 💬 Support
 
-- **Issues**: [GitHub Issues](https://github.com/YOUR_USERNAME/hikvision_next/issues)
+- **Issues**: [GitHub Issues](https://github.com/daveinc/hikvision_next/issues)
 - **Community**: Home Assistant Community Forums
 - **Documentation**: [Original ISAPI Documentation](link if you have it)
 
