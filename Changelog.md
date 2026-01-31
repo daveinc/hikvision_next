@@ -6,8 +6,15 @@ All notable changes to this fork will be documented in this file.
 
 ### 🔄 From Original Repository
 This fork is based on [maciej-or/hikvision_next](https://github.com/maciej-or/hikvision_next) (last updated ~2023)
+PTZ Support by [zyloid](https://github.com/zyloid/hikvision_next)
 
 ---
+## [1.1.0] - 2026-01-31
+### ✨ Added
+- **Instant binary sensor state updates** using Hikvision's event stream
+- **ONVIF PTZ camera controls** (from zyloid's fork)
+  - PTZ movement, presets, and patrols
+  - Credit: [zyloid](https://github.com/zyloid/hikvision_next)
 
 ## [1.0.0] - 2026-01-30
 
@@ -37,7 +44,6 @@ This fix properly parses and utilizes the real-time event state information that
 
 ### ✅ Tested On
 - DS-7216HQHI-K1 NVR
-- [Add your firmware version]
 - Home Assistant 2024.x
 
 ---
@@ -48,4 +54,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to help improve thi
 
 ## Original Repository
 
-For the original version (unmaintained), see: https://github.com/maciej-or/hikvision_next
+For the original version (main was unmaintained for two years at the time of writing this ), see: https://github.com/maciej-or/hikvision_next
