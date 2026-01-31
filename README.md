@@ -4,6 +4,16 @@
 
 ## 🚀 What's Fixed in This Fork
 
+### 🎥 ONVIF PTZ Support
+Added PTZ (Pan-Tilt-Zoom) camera controls via ONVIF protocol.
+
+**Features**:
+- PTZ movement controls (up, down, left, right, zoom in/out)
+- Preset positions
+- Patrol routes
+
+**Credit**: Merged from [zyloid's fork](https://github.com/zyloid/hikvision_next)
+
 ### ⚡ Instant Binary Sensor Updates
 **Problem**: Motion detection and other binary sensors were delayed by up to 2 minutes due to polling every 120 seconds.
 
