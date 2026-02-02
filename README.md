@@ -6,7 +6,7 @@ Disclaimer!
 
 This is a community-made integration.
 
-It is not affiliated with, authorized, or endorsed by Provision-ISR. The Provision-ISR name and logo are trademarks of their respective owners. This project does not attempt to misuse, exploit, or misrepresent the brand. Use at your own risk.
+It is not affiliated with, authorized, or endorsed by Hikvision. The Hikvision name and logo are trademarks of their respective owners. This project does not attempt to misuse, exploit, or misrepresent the brand. Use at your own risk.
 
 ## 🚀 What's Fixed in This Fork
 
