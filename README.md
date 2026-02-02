@@ -1,8 +1,8 @@
 # Hikvision Next - Enhanced Version
 
 > **Note**: This is a fork of [maciej-or/hikvision_next](https://github.com/maciej-or/hikvision_next) with critical bug fixes and improvements.
->
-> Disclaimer!
+
+Disclaimer!
 
 This is a community-made integration.
 
