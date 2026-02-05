@@ -76,7 +76,12 @@ class EventNotificationsView(HomeAssistantView):
                 if item.disabled_by:
                     continue
 
-                item_mac_address = item.runtime_data.device_info.mac_address
+                # FIXED: Use hass.data instead of runtime_data for compatibility
+                device = self.hass.data[DOMAIN].get(item.entry_id)
+                if not device:
+                    continue
+
+                item_mac_address = device.device_info.mac_address
                 instance_identifiers.append(item_mac_address)
 
                 if item_mac_address == alert.mac:
@@ -89,7 +94,11 @@ class EventNotificationsView(HomeAssistantView):
                     if item.disabled_by:
                         continue
 
-                    url = item.runtime_data.host
+                    device = self.hass.data[DOMAIN].get(item.entry_id)
+                    if not device:
+                        continue
+
+                    url = device.host
                     instance_identifiers.append(url)
 
                     if self.get_ip(urlparse(url).hostname) == device_ip:
@@ -99,7 +108,8 @@ class EventNotificationsView(HomeAssistantView):
         if not entry:
             raise ValueError(f"Cannot find ISAPI instance for device {device_ip} in {instance_identifiers}")
 
-        return entry.runtime_data
+        # FIXED: Return device from hass.data instead of runtime_data
+        return self.hass.data[DOMAIN][entry.entry_id]
 
     def get_ip(self, ip_string: str) -> str:
         """Return an IP if either hostname or IP is provided."""
