@@ -91,7 +91,7 @@
 
 ### Phase 6: Device Capabilities Detection
 **Goal:** Auto-detect what features the device supports
-
+##should already have this , i'm checking to see if the integration can provide some more info on this proccess.##
 - [ ] Add `get_device_capabilities()` to ISAPI client
 - [ ] Parse capability XML/JSON
 - [ ] Only create entities for supported features
@@ -143,7 +143,11 @@
             # channel id above 32 is an IP camera
             # On DVRs that support analog cameras 33 may not be
             # camera 1 but camera 5 for example
+- noticed that alarm input 1-16 that come provided with the integration doesn't account for the extra cameras that some devices allow , as such a digital caemra
+added to an analog dvr would result as a new alarm input sensor for camera 1701 and a new alarm input switch for 1701 as well . 
+my intent is to incorporate and account for such devices into the provided scheme and allow for extra cameras to be included correctly.
 
+- this should solidify fixing all the issues i encountered since forking this originally - 
 
 - None yet
 
