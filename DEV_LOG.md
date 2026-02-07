@@ -139,7 +139,11 @@
 
 ## Known Issues / Blockers
 
-*(Add issues as they're discovered)*
+ - noticed this in notifications.py:         if alert.channel_id > 32:
+            # channel id above 32 is an IP camera
+            # On DVRs that support analog cameras 33 may not be
+            # camera 1 but camera 5 for example
+
 
 - None yet
 
