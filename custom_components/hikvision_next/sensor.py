@@ -7,6 +7,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import slugify
 
 from . import HikvisionConfigEntry
 from .const import CONF_ALARM_SERVER_HOST, SECONDARY_COORDINATOR
@@ -14,7 +15,7 @@ from .isapi import StorageInfo
 
 NOTIFICATION_HOST_KEYS = [
     "protocol_type",
-    "address", # ip_address or host_name
+    "address",  # ip_address or host_name
     "port_no",
     "path",
 ]
@@ -52,7 +53,9 @@ class AlarmServerSensor(CoordinatorEntity, SensorEntity):
         """Initialize."""
         super().__init__(coordinator)
         device = coordinator.device
-        self._attr_unique_id = f"{device.device_info.serial_no}_{CONF_ALARM_SERVER_HOST}_{key}"
+        # FIXED: Slugify serial number
+        serial_slug = slugify(device.device_info.serial_no.lower())
+        self._attr_unique_id = f"{serial_slug}_{CONF_ALARM_SERVER_HOST}_{key}"
         self.entity_id = ENTITY_ID_FORMAT.format(self.unique_id)
         self._attr_device_info = device.hass_device_info()
         self._attr_translation_key = f"notifications_host_{key}"
@@ -76,7 +79,10 @@ class StorageSensor(CoordinatorEntity, SensorEntity):
         """Initialize."""
         super().__init__(coordinator)
         device = coordinator.device
-        self._attr_unique_id = f"{device.device_info.serial_no}_{hdd.id}_{hdd.name}"
+        # FIXED: Slugify serial number and HDD name
+        serial_slug = slugify(device.device_info.serial_no.lower())
+        hdd_name_slug = slugify(hdd.name.lower())
+        self._attr_unique_id = f"{serial_slug}_{hdd.id}_{hdd_name_slug}"
         self.entity_id = ENTITY_ID_FORMAT.format(self.unique_id)
         self._attr_device_info = device.hass_device_info()
         self._attr_name = f"{hdd.type} {hdd.name}"

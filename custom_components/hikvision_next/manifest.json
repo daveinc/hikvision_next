@@ -8,10 +8,10 @@
   "documentation": "https://github.com/maciej-or/hikvision_next",
   "integration_type": "device",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/daveinc/issues",
+  "issue_tracker": "https://github.com/maciej-or/hikvision_next/issues",
   "requirements": [
     "xmltodict==0.13.0",
     "requests-toolbelt==1.0.0"
   ],
-  "version": "1.3.7"
+  "version": "1.3.6"
 }
