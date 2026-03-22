@@ -65,6 +65,8 @@ class AlarmServerSensor(CoordinatorEntity, SensorEntity):
     def native_value(self) -> str | None:
         """Return the state of the sensor."""
         host = self.coordinator.data.get(CONF_ALARM_SERVER_HOST)
+        if host is None:
+            return None
         return host.get(self.key)
 
 
