@@ -1,116 +1,250 @@
-"""Config flow for hikvision_next integration."""
-
+"""Config flow for Provision ISR integration."""
 from __future__ import annotations
 
-from collections.abc import Mapping
 import logging
 from typing import Any
 
 import voluptuous as vol
 
-from homeassistant.components.network import async_get_source_ip
 from homeassistant.config_entries import (
-    SOURCE_REAUTH,
-    SOURCE_RECONFIGURE,
     ConfigFlow,
     ConfigFlowResult,
+    OptionsFlow,
 )
-from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME, CONF_VERIFY_SSL
+from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_PORT, CONF_USERNAME
+from homeassistant.core import callback
+from homeassistant.helpers import config_validation as cv
 
-from . import HikvisionConfigEntry
 from .const import (
-    CONF_ALARM_SERVER_HOST,
-    CONF_SET_ALARM_SERVER,
+    CONF_AUTO_DETECT_IP,
+    CONF_MAC_ADDRESS,
+    DEFAULT_PORT,
     DOMAIN,
-    RTSP_PORT_FORCED,
 )
-from .hikvision_device import HikvisionDevice
-from .isapi import ISAPIForbiddenError, ISAPIUnauthorizedError
+from .discovery import discover_devices
+from .provision_api import ProvisionClient
+from .provision_api.exceptions import AuthenticationError, ConnectionError
 
 _LOGGER = logging.getLogger(__name__)
 
+STEP_USER_DATA_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_HOST): cv.string,
+        vol.Required(CONF_PORT, default=DEFAULT_PORT): cv.port,
+        vol.Required(CONF_USERNAME): cv.string,
+        vol.Required(CONF_PASSWORD): cv.string,
+    }
+)
 
-class HikvisionConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for hikvision device."""
 
-    VERSION = 3
-    _entry: HikvisionConfigEntry
+class ProvisionISRConfigFlow(ConfigFlow, domain=DOMAIN):
+    """Handle a config flow for Provision ISR."""
 
-    async def get_schema(self, user_input: dict[str, Any]):
-        """Get schema with suggested values."""
-        schema = vol.Schema(
-            {
-                vol.Required(CONF_HOST, default="http://"): str,
-                vol.Optional(CONF_VERIFY_SSL, default=True): bool,
-                vol.Required(CONF_USERNAME): str,
-                vol.Required(CONF_PASSWORD): str,
-                vol.Required(CONF_SET_ALARM_SERVER, default=True): bool,
-                vol.Required(CONF_ALARM_SERVER_HOST): str,
-                vol.Optional(RTSP_PORT_FORCED): vol.And(int, vol.Range(min=1)),
-            }
-        )
-        if self.source in (SOURCE_RECONFIGURE, SOURCE_REAUTH):
-            return self.add_suggested_values_to_schema(
-                schema,
-                {**self._entry.data, **(user_input or {})},
-            )
-        local_ip = await async_get_source_ip(self.hass)
-        return self.add_suggested_values_to_schema(
-            schema,
-            {CONF_ALARM_SERVER_HOST: f"http://{local_ip}:8123", **(user_input or {})},
-        )
+    VERSION = 1
 
-    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        """Handle a flow initiated by the user."""
+    def __init__(self) -> None:
+        """Initialize the config flow."""
+        self._discovered_devices: list[dict[str, Any]] = []
+        self._manual_entry = False
 
-        errors = {}
-
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle the initial step - discovery."""
         if user_input is not None:
-            try:
-                host = user_input[CONF_HOST].rstrip("/")
-                user_input_validated = {
-                    **user_input,
-                    CONF_HOST: host,
+            # User selected a device or manual entry
+            if user_input.get("device") == "manual":
+                self._manual_entry = True
+                return await self.async_step_manual()
+            
+            # User selected discovered device
+            selected = user_input["device"]
+            for device in self._discovered_devices:
+                if device["name"] == selected:
+                    return await self.async_step_credentials(device)
+        
+        # Discover devices on network
+        _LOGGER.info("Starting device discovery...")
+        self._discovered_devices = await discover_devices(self.hass)
+        
+        # Build options list
+        device_options = {}
+        for device in self._discovered_devices:
+            device_options[device["name"]] = device["name"]
+        
+        # Always add manual entry option
+        device_options["manual"] = "Manual Entry"
+        
+        if len(self._discovered_devices) > 0:
+            _LOGGER.info("Found %d device(s)", len(self._discovered_devices))
+        
+        return self.async_show_form(
+            step_id="user",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("device"): vol.In(device_options),
                 }
+            ),
+            description_placeholders={
+                "discovered_count": str(len(self._discovered_devices))
+            },
+        )
 
-                device = HikvisionDevice(self.hass, data=user_input_validated)
-                await device.get_device_info()
-
-            except ISAPIForbiddenError:
-                errors["base"] = "insufficient_permission"
-            except ISAPIUnauthorizedError:
-                errors["base"] = "invalid_auth"
-            except Exception as ex:  # pylint: disable=broad-except
-                _LOGGER.error("Unexpected %s %s", {type(ex).__name__}, ex)
-                errors["base"] = f"Unexpected {type(ex).__name__}: {ex}"
-
-            if not errors:
-                if self.source == SOURCE_RECONFIGURE:
-                    await self.async_set_unique_id(device.device_info.serial_no, raise_on_progress=False)
-                    self._abort_if_unique_id_mismatch()
-                    return self.async_update_reload_and_abort(
-                        self._entry,
-                        data_updates=user_input_validated,
-                    )
-                if self.source == SOURCE_REAUTH:
-                    self._abort_if_unique_id_mismatch()
-                    return self.async_update_reload_and_abort(entry=self._entry, data=user_input_validated)
-
-                # add new device
-                await self.async_set_unique_id(device.device_info.serial_no)
+    async def async_step_credentials(
+        self, device_info: dict[str, Any], user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle credentials entry for discovered device."""
+        errors = {}
+        
+        if user_input is not None:
+            # Validate connection
+            user_input[CONF_HOST] = device_info[CONF_HOST]
+            user_input[CONF_PORT] = device_info[CONF_PORT]
+            
+            result = await self._test_connection(user_input)
+            if result["success"]:
+                # Store MAC address for IP change detection
+                user_input[CONF_MAC_ADDRESS] = result["mac"]
+                
+                # Check if already configured
+                await self.async_set_unique_id(result["mac"])
                 self._abort_if_unique_id_configured()
-                return self.async_create_entry(title=device.device_info.name, data=user_input_validated)
+                
+                return self.async_create_entry(
+                    title=result["model"],
+                    data=user_input,
+                )
+            
+            errors["base"] = result["error"]
+        
+        return self.async_show_form(
+            step_id="credentials",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_USERNAME, default="admin"): cv.string,
+                    vol.Required(CONF_PASSWORD): cv.string,
+                }
+            ),
+            errors=errors,
+            description_placeholders={
+                "host": device_info[CONF_HOST],
+                "port": str(device_info[CONF_PORT]),
+                "model": device_info.get("model", "Unknown"),
+            },
+        )
 
-        # show form
-        schema = await self.get_schema(user_input)
-        return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
+    async def async_step_manual(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle manual device entry."""
+        errors = {}
+        
+        if user_input is not None:
+            # Validate connection
+            result = await self._test_connection(user_input)
+            if result["success"]:
+                # Store MAC address
+                user_input[CONF_MAC_ADDRESS] = result["mac"]
+                
+                # Check if already configured
+                await self.async_set_unique_id(result["mac"])
+                self._abort_if_unique_id_configured()
+                
+                return self.async_create_entry(
+                    title=result["model"],
+                    data=user_input,
+                )
+            
+            errors["base"] = result["error"]
+        
+        return self.async_show_form(
+            step_id="manual",
+            data_schema=STEP_USER_DATA_SCHEMA,
+            errors=errors,
+        )
 
-    async def async_step_reconfigure(self, user_input: Mapping[str, Any] | None = None) -> ConfigFlowResult:
-        """Handle device re-configuration."""
-        self._entry = self._get_reconfigure_entry()
-        return await self.async_step_user()
+    async def _test_connection(self, config: dict[str, Any]) -> dict[str, Any]:
+        """Test connection to device.
+        
+        Returns:
+            Dictionary with success status, error message, MAC, and model
+        """
+        try:
+            client = ProvisionClient(
+                host=config[CONF_HOST],
+                port=config[CONF_PORT],
+                username=config[CONF_USERNAME],
+                password=config[CONF_PASSWORD],
+            )
+            
+            # Test connection and get device info
+            await client.connect()
+            device_info = await client.get_device_info()
+            await client.close()
+            
+            return {
+                "success": True,
+                "mac": device_info.mac,
+                "model": f"{device_info.brand} {device_info.model}",
+                "error": None,
+            }
+            
+        except AuthenticationError:
+            return {
+                "success": False,
+                "mac": None,
+                "model": None,
+                "error": "invalid_auth",
+            }
+        except ConnectionError:
+            return {
+                "success": False,
+                "mac": None,
+                "model": None,
+                "error": "cannot_connect",
+            }
+        except Exception as err:
+            _LOGGER.exception("Unexpected error during connection test")
+            return {
+                "success": False,
+                "mac": None,
+                "model": None,
+                "error": "unknown",
+            }
 
-    async def async_step_reauth(self, entry_data: dict[str, Any]) -> ConfigFlowResult:
-        """Perform reauth upon an authorization error."""
-        self._entry = self._get_reauth_entry()
-        return await self.async_step_user()
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry,
+    ) -> ProvisionISROptionsFlow:
+        """Get the options flow for this handler."""
+        return ProvisionISROptionsFlow(config_entry)
+
+
+class ProvisionISROptionsFlow(OptionsFlow):
+    """Handle options flow for Provision ISR."""
+
+    def __init__(self, config_entry) -> None:
+        """Initialize options flow."""
+        self.config_entry = config_entry
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Manage the options."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_AUTO_DETECT_IP,
+                        default=self.config_entry.options.get(
+                            CONF_AUTO_DETECT_IP, False
+                        ),
+                    ): cv.boolean,
+                }
+            ),
+        )
