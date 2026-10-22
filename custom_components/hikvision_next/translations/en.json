@@ -55,14 +55,50 @@
       "fielddetection_region": {
         "name": "Intrusion region {region_id}"
       },
+      "fielddetection_region_human": {
+        "name": "Intrusion region {region_id}, human"
+      },
+      "fielddetection_region_vehicle": {
+        "name": "Intrusion region {region_id}, vehicle"
+      },
+      "fielddetection_region_other": {
+        "name": "Intrusion region {region_id}, other"
+      },
       "linedetection_region": {
         "name": "Line Crossing line {region_id}"
+      },
+      "linedetection_region_human": {
+        "name": "Line Crossing line {region_id}, human"
+      },
+      "linedetection_region_vehicle": {
+        "name": "Line Crossing line {region_id}, vehicle"
+      },
+      "linedetection_region_other": {
+        "name": "Line Crossing line {region_id}, other"
       },
       "regionentrance_region": {
         "name": "Region Entrance region {region_id}"
       },
+      "regionentrance_region_human": {
+        "name": "Region Entrance region {region_id}, human"
+      },
+      "regionentrance_region_vehicle": {
+        "name": "Region Entrance region {region_id}, vehicle"
+      },
+      "regionentrance_region_other": {
+        "name": "Region Entrance region {region_id}, other"
+      },
       "regionexiting_region": {
         "name": "Region Exiting region {region_id}"
+      },
+      "regionexiting_region_human": {
+        "name": "Region Exiting region {region_id}, human"
+      },
+      "regionexiting_region_vehicle": {
+        "name": "Region Exiting region {region_id}, vehicle"
+      },
+      "regionexiting_region_other": {
+        "name": "Region Exiting region {region_id}, other"
       },
       "io": {
         "name": "Alarm Input {io_port_id}"

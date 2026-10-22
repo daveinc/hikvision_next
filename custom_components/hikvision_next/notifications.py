@@ -20,7 +20,15 @@ from homeassistant.util import slugify
 from .const import ALARM_SERVER_PATH, DOMAIN, HIKVISION_EVENT
 from .hikvision_device import HikvisionDevice
 from .isapi import AlertInfo, IPCamera, ISAPIClient
-from .isapi.const import EVENT_IO, EVENTS, MAX_EVENT_REGIONS
+from .isapi.const import (
+    DETECTION_TARGETS,
+    EVENT_IO,
+    EVENTS,
+    MAX_EVENT_REGIONS,
+    TARGET_HUMAN,
+    TARGET_OTHER,
+    TARGET_VEHICLE,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,6 +40,17 @@ CONTENT_TYPE_XML = (
 )
 CONTENT_TYPE_TEXT_HTML = "text/html"
 CONTENT_TYPE_IMAGE = "image/jpeg"
+
+
+def get_detection_target(detection_target: str | None) -> str | None:
+    """Map detection target reported by the camera to human / vehicle / other."""
+
+    if not detection_target:
+        return None
+    detection_target = detection_target.lower()
+    if detection_target in (TARGET_HUMAN, TARGET_VEHICLE):
+        return detection_target
+    return TARGET_OTHER
 
 
 class EventNotificationsView(HomeAssistantView):
@@ -202,24 +221,29 @@ class EventNotificationsView(HomeAssistantView):
         raise ValueError(f"Entity not found {entity_id}")
 
     def trigger_region_sensors(self, unique_id: str, alert: AlertInfo, new_state: str) -> None:
-        """Set state of the binary sensor for the line / region reported in the alert."""
+        """Set state of the binary sensors for the line / region and detection target reported in the alert."""
 
         if not EVENTS.get(alert.event_id, {}).get("has_regions"):
             return
 
+        target = get_detection_target(alert.detection_target)
+        sensor_ids = []
         if alert.region_id:
-            region_ids = [alert.region_id]
+            sensor_ids.append(f"{unique_id}_region_{alert.region_id}")
+            if target:
+                sensor_ids.append(f"{unique_id}_region_{alert.region_id}_{target}")
+            elif new_state == STATE_OFF:
+                # Inactive alert without target info, reset all targets of the line / region
+                sensor_ids.extend(f"{unique_id}_region_{alert.region_id}_{t}" for t in DETECTION_TARGETS)
         elif new_state == STATE_OFF:
             # Inactive alert without region info, reset all lines / regions of the event
-            region_ids = range(1, MAX_EVENT_REGIONS + 1)
-        else:
-            return
+            for region_id in range(1, MAX_EVENT_REGIONS + 1):
+                sensor_ids.append(f"{unique_id}_region_{region_id}")
+                sensor_ids.extend(f"{unique_id}_region_{region_id}_{t}" for t in DETECTION_TARGETS)
 
         entity_registry = async_get(self.hass)
-        for region_id in region_ids:
-            entity_id = entity_registry.async_get_entity_id(
-                Platform.BINARY_SENSOR, DOMAIN, f"{unique_id}_region_{region_id}"
-            )
+        for sensor_id in sensor_ids:
+            entity_id = entity_registry.async_get_entity_id(Platform.BINARY_SENSOR, DOMAIN, sensor_id)
             if entity_id and (entity := self.hass.states.get(entity_id)):
                 self.hass.states.async_set(entity_id, new_state, entity.attributes)
 

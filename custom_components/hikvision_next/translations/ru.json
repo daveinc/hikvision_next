@@ -29,14 +29,50 @@
       "fielddetection_region": {
         "name": "Вторжение, область {region_id}"
       },
+      "fielddetection_region_human": {
+        "name": "Вторжение, область {region_id}, человек"
+      },
+      "fielddetection_region_vehicle": {
+        "name": "Вторжение, область {region_id}, ТС"
+      },
+      "fielddetection_region_other": {
+        "name": "Вторжение, область {region_id}, другое"
+      },
       "linedetection_region": {
         "name": "Пересечение линии {region_id}"
+      },
+      "linedetection_region_human": {
+        "name": "Пересечение линии {region_id}, человек"
+      },
+      "linedetection_region_vehicle": {
+        "name": "Пересечение линии {region_id}, ТС"
+      },
+      "linedetection_region_other": {
+        "name": "Пересечение линии {region_id}, другое"
       },
       "regionentrance_region": {
         "name": "Вход в область {region_id}"
       },
+      "regionentrance_region_human": {
+        "name": "Вход в область {region_id}, человек"
+      },
+      "regionentrance_region_vehicle": {
+        "name": "Вход в область {region_id}, ТС"
+      },
+      "regionentrance_region_other": {
+        "name": "Вход в область {region_id}, другое"
+      },
       "regionexiting_region": {
         "name": "Выход из области {region_id}"
+      },
+      "regionexiting_region_human": {
+        "name": "Выход из области {region_id}, человек"
+      },
+      "regionexiting_region_vehicle": {
+        "name": "Выход из области {region_id}, ТС"
+      },
+      "regionexiting_region_other": {
+        "name": "Выход из области {region_id}, другое"
       }
     }
   }

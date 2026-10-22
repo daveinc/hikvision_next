@@ -15,6 +15,12 @@ EVENT_PIR: Final = "pir"
 # Max number of lines/regions per smart event (Hikvision supports up to 4)
 MAX_EVENT_REGIONS: Final = 4
 
+# Detection targets reported by cameras with human / vehicle classification
+TARGET_HUMAN: Final = "human"
+TARGET_VEHICLE: Final = "vehicle"
+TARGET_OTHER: Final = "other"
+DETECTION_TARGETS: Final = [TARGET_HUMAN, TARGET_VEHICLE, TARGET_OTHER]
+
 EVENTS = {
     "motiondetection": {
         "type": EVENT_BASIC,

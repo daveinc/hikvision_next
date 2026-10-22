@@ -241,16 +241,18 @@ async def test_nvr_and_cam_notification_alert(
 async def test_field_detection_region_sensors(
     hass: HomeAssistant, init_integration: MockConfigEntry,
 ) -> None:
-    """Test separate binary sensor for each intrusion region."""
+    """Test separate binary sensors for each intrusion region and detection target."""
 
     entity_id = "binary_sensor.ds_2cd2146g2_isu00000000aawrg00000000_1_fielddetection"
-    region_entity_ids = {
-        region_id: f"{entity_id}_region_{region_id}" for region_id in range(1, 5)
-    }
+    region_entity_ids = [
+        f"{entity_id}_region_{region_id}{target}"
+        for region_id in range(1, 5)
+        for target in ("", "_human", "_vehicle", "_other")
+    ]
 
     # region sensors are disabled by default
     entity_registry = er.async_get(hass)
-    for region_entity_id in region_entity_ids.values():
+    for region_entity_id in region_entity_ids:
         assert (entry := entity_registry.async_get(region_entity_id))
         assert entry.disabled_by == er.RegistryEntryDisabler.INTEGRATION
         entity_registry.async_update_entity(region_entity_id, disabled_by=None)
@@ -258,9 +260,12 @@ async def test_field_detection_region_sensors(
     await hass.config_entries.async_reload(init_integration.entry_id)
     await hass.async_block_till_done()
 
-    for region_entity_id in region_entity_ids.values():
-        assert (sensor := hass.states.get(region_entity_id))
-        assert sensor.state == STATE_OFF
+    def on_sensors():
+        return {e for e in region_entity_ids if hass.states.get(e).state == STATE_ON}
+
+    assert on_sensors() == set()
+    assert hass.states.get(f"{entity_id}_region_3_human").attributes["region_id"] == 3
+    assert hass.states.get(f"{entity_id}_region_3_human").attributes["detection_target"] == "human"
 
     view = EventNotificationsView(hass)
     response = await view.post(mock_event_notification("fielddetection_human"))
@@ -268,16 +273,22 @@ async def test_field_detection_region_sensors(
 
     assert hass.states.get(entity_id).state == STATE_ON
     assert hass.states.get(entity_id).attributes["region_id"] == 3
-    assert hass.states.get(region_entity_ids[3]).state == STATE_ON
-    assert hass.states.get(region_entity_ids[3]).attributes["region_id"] == 3
-    for region_id in (1, 2, 4):
-        assert hass.states.get(region_entity_ids[region_id]).state == STATE_OFF
+    assert on_sensors() == {f"{entity_id}_region_3", f"{entity_id}_region_3_human"}
 
     response = await view.post(mock_event_notification("fielddetection_vehicle"))
     assert response.status == HTTPStatus.OK
 
     assert hass.states.get(entity_id).attributes["region_id"] == 2
-    assert hass.states.get(region_entity_ids[2]).state == STATE_ON
-    assert hass.states.get(region_entity_ids[3]).state == STATE_ON
-    for region_id in (1, 4):
-        assert hass.states.get(region_entity_ids[region_id]).state == STATE_OFF
+    assert on_sensors() == {
+        f"{entity_id}_region_3",
+        f"{entity_id}_region_3_human",
+        f"{entity_id}_region_2",
+        f"{entity_id}_region_2_vehicle",
+    }
+
+    # inactive alert without region info resets all region sensors
+    response = await view.post(mock_event_notification("fielddetection_inactive"))
+    assert response.status == HTTPStatus.OK
+
+    assert hass.states.get(entity_id).state == STATE_OFF
+    assert on_sensors() == set()
