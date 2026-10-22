@@ -23,5 +23,21 @@
       "insufficient_permission": "Доступ запрещен, проверьте свои права доступа",
       "unknown": "Неизвестная ошибка"
     }
+  },
+  "entity": {
+    "binary_sensor": {
+      "fielddetection_region": {
+        "name": "Вторжение, область {region_id}"
+      },
+      "linedetection_region": {
+        "name": "Пересечение линии {region_id}"
+      },
+      "regionentrance_region": {
+        "name": "Вход в область {region_id}"
+      },
+      "regionexiting_region": {
+        "name": "Выход из области {region_id}"
+      }
+    }
   }
 }

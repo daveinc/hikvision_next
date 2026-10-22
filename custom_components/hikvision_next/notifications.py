@@ -12,7 +12,7 @@ from aiohttp import web
 from requests_toolbelt.multipart import MultipartDecoder
 
 from homeassistant.components.http import HomeAssistantView
-from homeassistant.const import CONTENT_TYPE_TEXT_PLAIN, STATE_ON, Platform
+from homeassistant.const import CONTENT_TYPE_TEXT_PLAIN, STATE_OFF, STATE_ON, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_registry import async_get
 from homeassistant.util import slugify
@@ -20,7 +20,7 @@ from homeassistant.util import slugify
 from .const import ALARM_SERVER_PATH, DOMAIN, HIKVISION_EVENT
 from .hikvision_device import HikvisionDevice
 from .isapi import AlertInfo, IPCamera, ISAPIClient
-from .isapi.const import EVENT_IO
+from .isapi.const import EVENT_IO, EVENTS, MAX_EVENT_REGIONS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -182,17 +182,46 @@ class EventNotificationsView(HomeAssistantView):
         entity_registry = async_get(self.hass)
         entity_id = entity_registry.async_get_entity_id(Platform.BINARY_SENSOR, DOMAIN, unique_id)
         if entity_id:
+            # CHANGED: Set state based on eventState from XML
+            new_state = STATE_ON if alert.event_state == "active" else STATE_OFF
             entity = self.hass.states.get(entity_id)
             if entity:
-                # CHANGED: Set state based on eventState from XML
-                new_state = STATE_ON if alert.event_state == "active" else "off"
-                self.hass.states.async_set(entity_id, new_state, entity.attributes)
-            
+                attributes = dict(entity.attributes)
+                if alert.region_id:
+                    # Keep the last triggered line / region on the aggregate sensor
+                    attributes["region_id"] = alert.region_id
+                self.hass.states.async_set(entity_id, new_state, attributes)
+
+            self.trigger_region_sensors(unique_id, alert, new_state)
+
+            if entity:
                 # Only fire event when motion starts (active), not when it ends
                 if alert.event_state == "active":
                     self.fire_hass_event(alert)
             return
         raise ValueError(f"Entity not found {entity_id}")
+
+    def trigger_region_sensors(self, unique_id: str, alert: AlertInfo, new_state: str) -> None:
+        """Set state of the binary sensor for the line / region reported in the alert."""
+
+        if not EVENTS.get(alert.event_id, {}).get("has_regions"):
+            return
+
+        if alert.region_id:
+            region_ids = [alert.region_id]
+        elif new_state == STATE_OFF:
+            # Inactive alert without region info, reset all lines / regions of the event
+            region_ids = range(1, MAX_EVENT_REGIONS + 1)
+        else:
+            return
+
+        entity_registry = async_get(self.hass)
+        for region_id in region_ids:
+            entity_id = entity_registry.async_get_entity_id(
+                Platform.BINARY_SENSOR, DOMAIN, f"{unique_id}_region_{region_id}"
+            )
+            if entity_id and (entity := self.hass.states.get(entity_id)):
+                self.hass.states.async_set(entity_id, new_state, entity.attributes)
 
     def fire_hass_event(self, alert: AlertInfo):
         """Fire HASS event."""
@@ -206,6 +235,8 @@ class EventNotificationsView(HomeAssistantView):
             "camera_name": camera_name,
             "event_id": alert.event_id,
         }
+        if alert.region_id:
+            message["region_id"] = alert.region_id
         if alert.detection_target:
             message["detection_target"] = alert.detection_target
             message["region_id"] = alert.region_id

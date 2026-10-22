@@ -52,6 +52,18 @@
       "regionexiting": {
         "name": "Region Exiting"
       },
+      "fielddetection_region": {
+        "name": "Intrusion region {region_id}"
+      },
+      "linedetection_region": {
+        "name": "Line Crossing line {region_id}"
+      },
+      "regionentrance_region": {
+        "name": "Region Entrance region {region_id}"
+      },
+      "regionexiting_region": {
+        "name": "Region Exiting region {region_id}"
+      },
       "io": {
         "name": "Alarm Input {io_port_id}"
       }

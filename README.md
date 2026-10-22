@@ -34,6 +34,11 @@ Added PTZ (Pan-Tilt-Zoom) camera controls via ONVIF protocol.
 - Motion ends → sensor turns OFF **instantly**
 - Perfect for automations that need real-time response
 
+### 📐 Separate Sensors per Line / Region
+**Problem**: With several lines or regions configured for Line Crossing, Intrusion, Region Entrance or Region Exiting, there was only one sensor per event, so automations could not tell which line or region was triggered.
+
+**Solution**: Each of these events now also gets a binary sensor per line / region (IDs 1-4, as reported by the camera in `regionID`), e.g. `binary_sensor.<serial>_1_linedetection_region_2`. They are **disabled by default**: enable the ones matching the lines / regions configured on your camera. The existing aggregate sensor keeps working and gets a `region_id` attribute with the last triggered line / region, and the `hikvision_next_event` event now always contains `region_id` when the camera reports it.
+
 ---
 
 ## 📦 Installation

@@ -7,6 +7,7 @@ from custom_components.hikvision_next.notifications import EventNotificationsVie
 from custom_components.hikvision_next.const import HIKVISION_EVENT, RTSP_PORT_FORCED
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from unittest.mock import MagicMock
+import homeassistant.helpers.entity_registry as er
 from tests.conftest import load_fixture, TEST_HOST_IP, TEST_CONFIG, TEST_CONFIG_OUTSIDE_NETWORK
 from homeassistant.const import (
     STATE_ON,
@@ -234,3 +235,49 @@ async def test_nvr_and_cam_notification_alert(
     assert sensor_cam_2.state == STATE_OFF
     assert sensor_cam_3.state == STATE_ON
     assert sensor_nvr_1.state == STATE_ON
+
+
+@pytest.mark.parametrize("init_integration", ["DS-2CD2146G2-ISU"], indirect=True)
+async def test_field_detection_region_sensors(
+    hass: HomeAssistant, init_integration: MockConfigEntry,
+) -> None:
+    """Test separate binary sensor for each intrusion region."""
+
+    entity_id = "binary_sensor.ds_2cd2146g2_isu00000000aawrg00000000_1_fielddetection"
+    region_entity_ids = {
+        region_id: f"{entity_id}_region_{region_id}" for region_id in range(1, 5)
+    }
+
+    # region sensors are disabled by default
+    entity_registry = er.async_get(hass)
+    for region_entity_id in region_entity_ids.values():
+        assert (entry := entity_registry.async_get(region_entity_id))
+        assert entry.disabled_by == er.RegistryEntryDisabler.INTEGRATION
+        entity_registry.async_update_entity(region_entity_id, disabled_by=None)
+
+    await hass.config_entries.async_reload(init_integration.entry_id)
+    await hass.async_block_till_done()
+
+    for region_entity_id in region_entity_ids.values():
+        assert (sensor := hass.states.get(region_entity_id))
+        assert sensor.state == STATE_OFF
+
+    view = EventNotificationsView(hass)
+    response = await view.post(mock_event_notification("fielddetection_human"))
+    assert response.status == HTTPStatus.OK
+
+    assert hass.states.get(entity_id).state == STATE_ON
+    assert hass.states.get(entity_id).attributes["region_id"] == 3
+    assert hass.states.get(region_entity_ids[3]).state == STATE_ON
+    assert hass.states.get(region_entity_ids[3]).attributes["region_id"] == 3
+    for region_id in (1, 2, 4):
+        assert hass.states.get(region_entity_ids[region_id]).state == STATE_OFF
+
+    response = await view.post(mock_event_notification("fielddetection_vehicle"))
+    assert response.status == HTTPStatus.OK
+
+    assert hass.states.get(entity_id).attributes["region_id"] == 2
+    assert hass.states.get(region_entity_ids[2]).state == STATE_ON
+    assert hass.states.get(region_entity_ids[3]).state == STATE_ON
+    for region_id in (1, 4):
+        assert hass.states.get(region_entity_ids[region_id]).state == STATE_OFF

@@ -11,6 +11,10 @@ EVENT_BASIC: Final = "basic"
 EVENT_IO: Final = "io"
 EVENT_SMART: Final = "smart"
 EVENT_PIR: Final = "pir"
+
+# Max number of lines/regions per smart event (Hikvision supports up to 4)
+MAX_EVENT_REGIONS: Final = 4
+
 EVENTS = {
     "motiondetection": {
         "type": EVENT_BASIC,
@@ -38,23 +42,27 @@ EVENTS = {
         "type": EVENT_SMART,
         "label": "Intrusion",
         "slug": "FieldDetection",
+        "has_regions": True,
         "mutex": True,
     },
     "linedetection": {
         "type": EVENT_SMART,
         "label": "Line Crossing",
         "slug": "LineDetection",
+        "has_regions": True,
         "mutex": True,
     },
     "regionentrance": {
         "type": EVENT_SMART,
         "label": "Region Entrance",
         "slug": "regionEntrance",
+        "has_regions": True,
     },
     "regionexiting": {
         "type": EVENT_SMART,
         "label": "Region Exiting",
         "slug": "regionExiting",
+        "has_regions": True,
     },
     "io": {
         "type": EVENT_IO,
