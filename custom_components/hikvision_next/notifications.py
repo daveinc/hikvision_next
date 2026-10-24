@@ -226,15 +226,16 @@ class EventNotificationsView(HomeAssistantView):
         if not EVENTS.get(alert.event_id, {}).get("has_regions"):
             return
 
-        target = get_detection_target(alert.detection_target)
         sensor_ids = []
-        if alert.region_id:
-            sensor_ids.append(f"{unique_id}_region_{alert.region_id}")
-            if target:
-                sensor_ids.append(f"{unique_id}_region_{alert.region_id}_{target}")
-            elif new_state == STATE_OFF:
-                # Inactive alert without target info, reset all targets of the line / region
-                sensor_ids.extend(f"{unique_id}_region_{alert.region_id}_{t}" for t in DETECTION_TARGETS)
+        regions = [(region_id, target) for region_id, target in alert.regions if region_id]
+        if regions:
+            for region_id, detection_target in regions:
+                sensor_ids.append(f"{unique_id}_region_{region_id}")
+                if target := get_detection_target(detection_target):
+                    sensor_ids.append(f"{unique_id}_region_{region_id}_{target}")
+                elif new_state == STATE_OFF:
+                    # Inactive alert without target info, reset all targets of the line / region
+                    sensor_ids.extend(f"{unique_id}_region_{region_id}_{t}" for t in DETECTION_TARGETS)
         elif new_state == STATE_OFF:
             # Inactive alert without region info, reset all lines / regions of the event
             for region_id in range(1, MAX_EVENT_REGIONS + 1):

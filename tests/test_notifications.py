@@ -292,3 +292,34 @@ async def test_field_detection_region_sensors(
 
     assert hass.states.get(entity_id).state == STATE_OFF
     assert on_sensors() == set()
+
+
+@pytest.mark.parametrize("init_integration", ["DS-2CD2146G2-ISU"], indirect=True)
+async def test_field_detection_alert_with_two_regions(
+    hass: HomeAssistant, init_integration: MockConfigEntry,
+) -> None:
+    """Test alert reporting two regions at once triggers both region sensors."""
+
+    entity_id = "binary_sensor.ds_2cd2146g2_isu00000000aawrg00000000_1_fielddetection"
+    region_entity_ids = [
+        f"{entity_id}_region_{region_id}{target}"
+        for region_id in range(1, 5)
+        for target in ("", "_human", "_vehicle", "_other")
+    ]
+    entity_registry = er.async_get(hass)
+    for region_entity_id in region_entity_ids:
+        entity_registry.async_update_entity(region_entity_id, disabled_by=None)
+    await hass.config_entries.async_reload(init_integration.entry_id)
+    await hass.async_block_till_done()
+
+    view = EventNotificationsView(hass)
+    response = await view.post(mock_event_notification("fielddetection_two_regions"))
+    assert response.status == HTTPStatus.OK
+
+    assert hass.states.get(entity_id).state == STATE_ON
+    assert {e for e in region_entity_ids if hass.states.get(e).state == STATE_ON} == {
+        f"{entity_id}_region_3",
+        f"{entity_id}_region_3_human",
+        f"{entity_id}_region_1",
+        f"{entity_id}_region_1_vehicle",
+    }
