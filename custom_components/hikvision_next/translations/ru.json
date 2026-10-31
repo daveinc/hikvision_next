@@ -1,7 +1,9 @@
 {
   "config": {
     "abort": {
-      "already_configured": "Устройство уже настроено"
+      "already_configured": "Устройство уже настроено",
+      "reauth_successful": "Повторная аутентификация выполнена успешно",
+      "reconfigure_successful": "Перенастройка выполнена успешно"
     },
     "step": {
       "user": {
@@ -10,8 +12,8 @@
           "host": "URL",
           "password": "Пароль",
           "username": "Имя пользователя",
-          "rtsp_port_forced": "Принудительный RTSP-порт (необязательно)",
           "verify_ssl": "Проверьте SSL-сертификат (снимите флажок для self-signed сертификата)",
+          "rtsp_port_forced": "Принудительный RTSP-порт (необязательно)",
           "set_alarm_server": "Установить сервер тревоги используя следующий адрес:",
           "alarm_server": "Home Assistant адрес, доступный Hikvison устройству"
         }
@@ -22,6 +24,189 @@
       "invalid_auth": "Ошибка аутентификации",
       "insufficient_permission": "Доступ запрещен, проверьте свои права доступа",
       "unknown": "Неизвестная ошибка"
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "motiondetection": {
+        "name": "Движение"
+      },
+      "tamperdetection": {
+        "name": "Закрытие объектива"
+      },
+      "videoloss": {
+        "name": "Потеря видео"
+      },
+      "scenechangedetection": {
+        "name": "Смена сцены"
+      },
+      "fielddetection": {
+        "name": "Вторжение"
+      },
+      "linedetection": {
+        "name": "Пересечение линии"
+      },
+      "regionentrance": {
+        "name": "Вход в область"
+      },
+      "regionexiting": {
+        "name": "Выход из области"
+      },
+      "fielddetection_region": {
+        "name": "Вторжение, область {region_id}"
+      },
+      "fielddetection_region_human": {
+        "name": "Вторжение, область {region_id}, человек"
+      },
+      "fielddetection_region_vehicle": {
+        "name": "Вторжение, область {region_id}, ТС"
+      },
+      "fielddetection_region_other": {
+        "name": "Вторжение, область {region_id}, другое"
+      },
+      "linedetection_region": {
+        "name": "Пересечение линии {region_id}"
+      },
+      "linedetection_region_human": {
+        "name": "Пересечение линии {region_id}, человек"
+      },
+      "linedetection_region_vehicle": {
+        "name": "Пересечение линии {region_id}, ТС"
+      },
+      "linedetection_region_other": {
+        "name": "Пересечение линии {region_id}, другое"
+      },
+      "regionentrance_region": {
+        "name": "Вход в область {region_id}"
+      },
+      "regionentrance_region_human": {
+        "name": "Вход в область {region_id}, человек"
+      },
+      "regionentrance_region_vehicle": {
+        "name": "Вход в область {region_id}, ТС"
+      },
+      "regionentrance_region_other": {
+        "name": "Вход в область {region_id}, другое"
+      },
+      "regionexiting_region": {
+        "name": "Выход из области {region_id}"
+      },
+      "regionexiting_region_human": {
+        "name": "Выход из области {region_id}, человек"
+      },
+      "regionexiting_region_vehicle": {
+        "name": "Выход из области {region_id}, ТС"
+      },
+      "regionexiting_region_other": {
+        "name": "Выход из области {region_id}, другое"
+      },
+      "io": {
+        "name": "Тревожный вход {io_port_id}"
+      }
+    },
+    "switch": {
+      "alarm_output": {
+        "name": "Тревожный выход {port_no}"
+      },
+      "holiday_mode": {
+        "name": "Праздничный режим"
+      },
+      "motiondetection": {
+        "name": "Обнаружение движения"
+      },
+      "tamperdetection": {
+        "name": "Обнаружение закрытия объектива"
+      },
+      "videoloss": {
+        "name": "Обнаружение потери видео"
+      },
+      "scenechangedetection": {
+        "name": "Обнаружение смены сцены"
+      },
+      "fielddetection": {
+        "name": "Обнаружение вторжения"
+      },
+      "linedetection": {
+        "name": "Обнаружение пересечения линии"
+      },
+      "regionentrance": {
+        "name": "Обнаружение входа в область"
+      },
+      "regionexiting": {
+        "name": "Обнаружение выхода из области"
+      },
+      "io": {
+        "name": "Тревожный вход {io_port_id}"
+      }
+    },
+    "camera": {
+      "stream1": {
+        "name": "Основной поток"
+      },
+      "stream2": {
+        "name": "Дополнительный поток"
+      },
+      "stream3": {
+        "name": "Основной поток (событие)"
+      },
+      "stream4": {
+        "name": "Транскодированный поток"
+      }
+    },
+    "sensor": {
+      "notifications_host_protocol_type": {
+        "name": "Протокол сервера уведомлений"
+      },
+      "notifications_host_address": {
+        "name": "Сервер уведомлений"
+      },
+      "notifications_host_port_no": {
+        "name": "Порт сервера уведомлений"
+      },
+      "notifications_host_path": {
+        "name": "Путь сервера уведомлений"
+      }
+    },
+    "image": {
+      "snapshot": {
+        "name": "Снимок {camera}"
+      }
+    }
+  },
+  "services": {
+    "ptz_move": {
+      "name": "Движение PTZ",
+      "description": "Управление движением PTZ-камеры (поворот, наклон, зум).",
+      "fields": {
+        "direction": {
+          "name": "Направление",
+          "description": "Предустановленное направление движения."
+        },
+        "pan": {
+          "name": "Скорость поворота",
+          "description": "Своя скорость/направление поворота (от -100 до 100). Имеет приоритет над направлением."
+        },
+        "tilt": {
+          "name": "Скорость наклона",
+          "description": "Своя скорость/направление наклона (от -100 до 100). Имеет приоритет над направлением."
+        },
+        "zoom": {
+          "name": "Скорость зума",
+          "description": "Своя скорость/направление зума (от -100 до 100). Имеет приоритет над направлением."
+        },
+        "duration": {
+          "name": "Длительность (мс)",
+          "description": "Длительность движения в миллисекундах (для кратковременного режима)."
+        },
+        "continuous": {
+          "name": "Непрерывный режим",
+          "description": "Если включено, движение продолжается до команды остановки."
+        }
+      }
+    },
+    "ptz_stop": {
+      "name": "Остановка PTZ",
+      "description": "Остановить любое движение PTZ-камеры."
     }
   }
 }

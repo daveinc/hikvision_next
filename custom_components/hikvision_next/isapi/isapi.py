@@ -729,8 +729,13 @@ class ISAPIClient:
         # <EventNotificationAlert version="2.0"
         mac = alert.get("macAddress")
 
-        detection_target = deep_get(alert, "DetectionRegionList.DetectionRegionEntry.detectionTarget")
-        region_id = int(deep_get(alert, "DetectionRegionList.DetectionRegionEntry.regionID", 0))
+        # Alert may contain several lines / regions triggered at the same time
+        regions = [
+            (int(entry.get("regionID", 0)), entry.get("detectionTarget"))
+            for entry in deep_get(alert, "DetectionRegionList.DetectionRegionEntry", [])
+            if isinstance(entry, dict)
+        ]
+        region_id, detection_target = regions[0] if regions else (0, None)
         event_state = alert.get("eventState", "active")
 
         if not EVENTS[event_id]:
@@ -745,6 +750,7 @@ class ISAPIClient:
             mac,
             region_id,
             detection_target,
+            regions,
         )
 
     async def get_camera_image(

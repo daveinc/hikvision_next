@@ -1,0 +1,14 @@
+<EventNotificationAlert version="2.0"
+  xmlns="http://www.hikvision.com/ver20/XMLSchema">
+  <ipAddress>1.0.0.255</ipAddress>
+  <portNo>80</portNo>
+  <protocol>HTTP</protocol>
+  <macAddress>ac:b9:2f:49:44:75</macAddress>
+  <channelID>1</channelID>
+  <dateTime>2022-01-31T13:53:15+01:00</dateTime>
+  <activePostCount>0</activePostCount>
+  <eventType>fielddetection</eventType>
+  <eventState>inactive</eventState>
+  <eventDescription>fielddetection alarm</eventDescription>
+  <channelName>COUR NORD</channelName>
+</EventNotificationAlert>

@@ -18,6 +18,7 @@ class AlertInfo:
     mac: str = ""
     region_id: int = 0
     detection_target: str = field(default=None)
+    regions: list[tuple[int, str | None]] = field(default_factory=list)  # (region_id, detection_target)
 @dataclass
 class MutexIssue:
     """Holds mutually exclusive event checking info."""
